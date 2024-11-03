@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Dict, Any
 from datetime import datetime
+from data.weather_data_fetcher import WeatherDataFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,10 @@ class DataFetcher:
         self.logger = logging.getLogger(__name__)
         self.logger.info("Initializing DataFetcher")
         self.investment_banking_data = []
+        self.weather_fetcher = WeatherDataFetcher(
+            api_key=config["api"]["weather_api_key"],
+            api_endpoint=config["api"]["weather_api_endpoint"]
+        )
 
     async def process_data_async(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -156,3 +161,28 @@ class DataFetcher:
         except Exception as e:
             self.logger.error(f"Error processing investment banking trades data: {str(e)}")
             raise
+
+    async def fetch_and_process_weather_data(self, location: str) -> Dict[str, Any]:
+        """
+        Fetch and process weather data for a given location.
+        
+        Args:
+            location: Location for which to fetch weather data
+            
+        Returns:
+            Dictionary containing processed weather data
+        """
+        try:
+            self.logger.info(f"Fetching weather data for location: {location}")
+            weather_data = self.weather_fetcher.fetch_weather_data(location)
+            processed_weather_data = {
+                "location": location,
+                "temperature": weather_data.get("main", {}).get("temp"),
+                "humidity": weather_data.get("main", {}).get("humidity"),
+                "weather": weather_data.get("weather", [{}])[0].get("description")
+            }
+            self.logger.info(f"Weather data processing complete for location: {location}")
+            return processed_weather_data
+        except Exception as e:
+            self.logger.error(f"Error fetching or processing weather data: {str(e)}")
+            return {}

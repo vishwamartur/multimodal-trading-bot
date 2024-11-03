@@ -4,10 +4,11 @@ from datetime import datetime
 from strategies.base_strategy import BaseStrategy, StrategyResult
 from models.sentiment_analysis import SentimentAnalyzer
 from models.chatgpt_integration import ChatGPTIntegration
+from data.weather_data_fetcher import WeatherDataFetcher
 
 class FuturesStrategy(BaseStrategy):
     """
-    Strategy for trading futures contracts using sentiment analysis and technical indicators.
+    Strategy for trading futures contracts using sentiment analysis, technical indicators, and weather data.
     """
     
     def __init__(self, config: Dict[str, Any]):
@@ -20,10 +21,14 @@ class FuturesStrategy(BaseStrategy):
         super().__init__(config)
         self.sentiment_analyzer = SentimentAnalyzer(config)
         self.chatgpt = ChatGPTIntegration(config)
+        self.weather_fetcher = WeatherDataFetcher(
+            api_key=config["api"]["weather_api_key"],
+            api_endpoint=config["api"]["weather_api_endpoint"]
+        )
         
     async def generate_signal(self, market_data: Dict[str, Any]) -> StrategyResult:
         """
-        Generate trading signal for futures based on market data and sentiment.
+        Generate trading signal for futures based on market data, sentiment, and weather data.
         
         Args:
             market_data: Dictionary containing processed market data
@@ -44,11 +49,16 @@ class FuturesStrategy(BaseStrategy):
         sentiment = await self.sentiment_analyzer.analyze_sentiment(market_data)
         chatgpt_score = await self.chatgpt.analyze_sentiment_async(market_data)
         
+        # Fetch and process weather data
+        weather_data = await self.weather_fetcher.fetch_weather_data("New York")  # Example location
+        weather_score = self._analyze_weather_data(weather_data)
+        
         # Combine signals
         signals = {
             "sentiment": sentiment.score,
             "chatgpt": chatgpt_score,
-            "technical": self._analyze_technical_indicators(market_data)
+            "technical": self._analyze_technical_indicators(market_data),
+            "weather": weather_score
         }
         
         # Calculate final signal and confidence
@@ -99,4 +109,25 @@ class FuturesStrategy(BaseStrategy):
             if volume > avg_volume * 1.5:  # High volume
                 score *= 1.2  # Amplify existing signal
                 
+        return max(min(score, 1.0), -1.0)  # Clamp between -1 and 1
+
+    def _analyze_weather_data(self, weather_data: Dict[str, Any]) -> float:
+        """
+        Analyze weather data for trading signals.
+        
+        Args:
+            weather_data: Dictionary containing weather data
+            
+        Returns:
+            Weather analysis score between -1 and 1
+        """
+        score = 0.0
+        temperature = weather_data.get("main", {}).get("temp")
+        weather_description = weather_data.get("weather", [{}])[0].get("description")
+        
+        if temperature and temperature < 0:  # Example condition for cold weather
+            score -= 0.2
+        if weather_description and "rain" in weather_description.lower():
+            score -= 0.3  # Example condition for rainy weather
+        
         return max(min(score, 1.0), -1.0)  # Clamp between -1 and 1

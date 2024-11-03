@@ -16,6 +16,7 @@ from utils.notifier import Notifier
 from utils.logger import setup_logger
 from websocket.order_execution import OrderExecution
 from utils.backtest import Backtester
+from data.investment_banking_tracker import InvestmentBankingTracker
 
 # Load environment variables and validate required keys
 load_dotenv()
@@ -42,7 +43,8 @@ async def process_market_data(
     options_strategy: OptionsStrategy,
     chatgpt_integration: ChatGPTIntegration,
     order_executor: OrderExecution,
-    notifier: Notifier
+    notifier: Notifier,
+    investment_banking_tracker: InvestmentBankingTracker
 ) -> None:
     """
     Process incoming market data asynchronously and execute trading strategies
@@ -55,9 +57,10 @@ async def process_market_data(
         futures_task = asyncio.create_task(futures_strategy.evaluate_async(processed_data))
         options_task = asyncio.create_task(options_strategy.evaluate_async(processed_data))
         sentiment_task = asyncio.create_task(chatgpt_integration.analyze_sentiment_async(processed_data))
+        investment_banking_task = asyncio.create_task(investment_banking_tracker.process_investment_banking_trades(data))
 
-        futures_signal, options_signal, sentiment = await asyncio.gather(
-            futures_task, options_task, sentiment_task
+        futures_signal, options_signal, sentiment, _ = await asyncio.gather(
+            futures_task, options_task, sentiment_task, investment_banking_task
         )
 
         # Handle futures signals
@@ -108,6 +111,7 @@ async def main():
         chatgpt_integration = ChatGPTIntegration(api_key=os.getenv("CHATGPT_API_KEY"))
         notifier = Notifier(config["notifications"])
         order_executor = OrderExecution(api_key=os.getenv("DHAN_API_KEY"))
+        investment_banking_tracker = InvestmentBankingTracker(config["investment_banking"])
 
         # Run backtesting with performance metrics
         backtester = Backtester()
@@ -127,7 +131,8 @@ async def main():
                 options_strategy,
                 chatgpt_integration,
                 order_executor,
-                notifier
+                notifier,
+                investment_banking_tracker
             )
 
         # Start WebSocket connection

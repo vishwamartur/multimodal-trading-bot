@@ -19,6 +19,8 @@ def load_config():
             "api_key": os.getenv("DHAN_API_KEY"),
             "secret_key": os.getenv("DHAN_SECRET_KEY"),
             "chatgpt_api_key": os.getenv("CHATGPT_API_KEY"),
+            "weather_api_key": os.getenv("WEATHER_API_KEY"),
+            "weather_api_endpoint": os.getenv("WEATHER_API_ENDPOINT"),
         },
         "strategy": {
             "futures": {

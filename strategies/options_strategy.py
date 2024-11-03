@@ -2,7 +2,7 @@ import logging
 from typing import Dict, Any
 from datetime import datetime
 from .base_strategy import BaseStrategy, StrategyResult
-
+from data.weather_data_fetcher import WeatherDataFetcher
 
 class OptionsStrategy(BaseStrategy):
     """
@@ -20,6 +20,10 @@ class OptionsStrategy(BaseStrategy):
         super().__init__(config)
         self.logger = logging.getLogger(__name__)
         self.logger.info("Initializing OptionsStrategy")
+        self.weather_fetcher = WeatherDataFetcher(
+            api_key=config["api"]["weather_api_key"],
+            api_endpoint=config["api"]["weather_api_endpoint"]
+        )
 
     async def generate_signal(self, market_data: Dict[str, Any]) -> StrategyResult:
         """
@@ -47,10 +51,15 @@ class OptionsStrategy(BaseStrategy):
         # Analyze technical indicators
         technical_score = self._analyze_technical_indicators(market_data)
         
+        # Fetch and process weather data
+        weather_data = await self.weather_fetcher.fetch_weather_data("New York")  # Example location
+        weather_score = self._analyze_weather_data(weather_data)
+        
         # Calculate final signal
         signals = {
             "options": options_score,
-            "technical": technical_score
+            "technical": technical_score,
+            "weather": weather_score
         }
         
         signal = sum(signals.values()) / len(signals)
@@ -139,4 +148,25 @@ class OptionsStrategy(BaseStrategy):
             if volatility > avg_vol * 1.3:
                 score *= 0.8  # Reduce signal strength in high volatility
                 
+        return max(min(score, 1.0), -1.0)  # Clamp between -1 and 1
+
+    def _analyze_weather_data(self, weather_data: Dict[str, Any]) -> float:
+        """
+        Analyze weather data for trading signals.
+        
+        Args:
+            weather_data: Dictionary containing weather data
+            
+        Returns:
+            Weather analysis score between -1 and 1
+        """
+        score = 0.0
+        temperature = weather_data.get("main", {}).get("temp")
+        weather_description = weather_data.get("weather", [{}])[0].get("description")
+        
+        if temperature and temperature < 0:  # Example condition for cold weather
+            score -= 0.2
+        if weather_description and "rain" in weather_description.lower():
+            score -= 0.3  # Example condition for rainy weather
+        
         return max(min(score, 1.0), -1.0)  # Clamp between -1 and 1

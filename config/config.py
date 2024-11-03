@@ -38,6 +38,10 @@ def load_config():
                 },
             },
         },
+        "investment_banking": {
+            "tracking_enabled": os.getenv("INVESTMENT_BANKING_TRACKING_ENABLED", "false") == "true",
+            "data_source": os.getenv("INVESTMENT_BANKING_DATA_SOURCE", "default_source"),
+        },
         "logging": {
             "log_level": os.getenv("LOG_LEVEL", "INFO"),
             "log_file": "logs/trading_bot.log"

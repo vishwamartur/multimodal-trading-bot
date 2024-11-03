@@ -1,21 +1,26 @@
 import logging
 from typing import Dict, Any
 from datetime import datetime
+import telegram
+from telegram import Bot
 
 class Notifier:
     """
     Class for sending notifications and alerts about trading events.
     """
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], telegram_bot: Bot):
         """
         Initialize notifier.
         
         Args:
             config: Dictionary containing notifier configuration parameters
+            telegram_bot: Initialized Telegram Bot instance
         """
         self.config = config
         self.logger = logging.getLogger(__name__)
+        self.telegram_bot = telegram_bot
+        self.telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
     def send_trade_notification(self, trade_data: Dict[str, Any]) -> None:
         """
@@ -88,5 +93,8 @@ class Notifier:
 
     def _send_telegram(self, message: str) -> None:
         """Send Telegram notification"""
-        # Telegram bot implementation
-        self.logger.debug("Telegram notification sent")
+        try:
+            self.telegram_bot.send_message(chat_id=self.telegram_chat_id, text=message)
+            self.logger.debug("Telegram notification sent")
+        except Exception as e:
+            self.logger.error(f"Failed to send Telegram notification: {str(e)}")

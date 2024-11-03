@@ -17,13 +17,17 @@ from utils.logger import setup_logger
 from websocket.order_execution import OrderExecution
 from utils.backtest import Backtester
 from data.investment_banking_tracker import InvestmentBankingTracker
+import telegram
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 # Load environment variables and validate required keys
 load_dotenv()
 required_env_vars = [
     "DHAN_API_KEY",
     "DHAN_SECRET_KEY",
-    "CHATGPT_API_KEY"
+    "CHATGPT_API_KEY",
+    "TELEGRAM_BOT_API_KEY",
+    "TELEGRAM_CHAT_ID"
 ]
 for var in required_env_vars:
     if not os.getenv(var):
@@ -35,6 +39,9 @@ logger.info("Starting trading bot...")
 
 # Load and validate configuration settings
 config = load_config()
+
+# Initialize Telegram bot
+telegram_bot = telegram.Bot(token=os.getenv("TELEGRAM_BOT_API_KEY"))
 
 async def process_market_data(
     data: Dict,
@@ -109,7 +116,7 @@ async def main():
         futures_strategy = FuturesStrategy(config["strategy"]["futures"])
         options_strategy = OptionsStrategy(config["strategy"]["options"])
         chatgpt_integration = ChatGPTIntegration(api_key=os.getenv("CHATGPT_API_KEY"))
-        notifier = Notifier(config["notifications"])
+        notifier = Notifier(config["notifications"], telegram_bot)
         order_executor = OrderExecution(api_key=os.getenv("DHAN_API_KEY"))
         investment_banking_tracker = InvestmentBankingTracker(config["investment_banking"])
 

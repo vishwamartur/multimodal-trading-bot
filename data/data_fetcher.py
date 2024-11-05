@@ -66,6 +66,11 @@ class DataFetcher:
             if all(key in processed_data for key in ["high", "low"]):
                 processed_data["range"] = processed_data["high"] - processed_data["low"]
 
+            # Calculate profit and loss
+            executed_price = raw_data.get("executed_price")
+            if executed_price is not None:
+                processed_data["profit_loss"] = processed_data["price"] - executed_price
+
             self.logger.debug("Data processing complete")
             return processed_data
 

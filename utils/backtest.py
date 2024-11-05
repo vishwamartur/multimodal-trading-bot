@@ -39,6 +39,9 @@ class Backtest:
             # Simulate trade execution
             trade_result = self._simulate_trade(signal, data_point)
             
+            # Calculate profit and loss
+            profit_loss = self._calculate_profit_loss(trade_result, data_point)
+            
             # Store results
             self.results.append({
                 "timestamp": data_point["timestamp"],
@@ -46,8 +49,12 @@ class Backtest:
                 "price": data_point["price"],
                 "signal": signal.signal,
                 "confidence": signal.confidence,
-                "trade_result": trade_result
+                "trade_result": trade_result,
+                "profit_loss": profit_loss
             })
+            
+            # Log profit and loss
+            self.logger.info(f"Profit/Loss for {data_point['symbol']} at {data_point['timestamp']}: {profit_loss}")
             
         return self.results
 
@@ -79,6 +86,22 @@ class Backtest:
             "slippage": slippage
         }
 
+    def _calculate_profit_loss(self, trade_result: Dict[str, Any], market_data: Dict[str, Any]) -> float:
+        """
+        Calculate profit and loss for a trade.
+        
+        Args:
+            trade_result: Dictionary containing trade simulation results
+            market_data: Current market data point
+            
+        Returns:
+            Float representing profit or loss
+        """
+        if trade_result["action"] == "hold":
+            return 0.0
+        return (market_data["price"] - trade_result["price"]) * trade_result["size"] * \
+               (1 if trade_result["action"] == "buy" else -1)
+
     def calculate_metrics(self) -> Dict[str, float]:
         """
         Calculate backtest performance metrics.
@@ -91,12 +114,14 @@ class Backtest:
             
         total_trades = len([r for r in self.results if r["trade_result"]["action"] != "hold"])
         winning_trades = len([r for r in self.results if self._is_winning_trade(r)])
+        total_profit_loss = sum(r["profit_loss"] for r in self.results)
         
         return {
             "total_trades": total_trades,
             "win_rate": winning_trades / total_trades if total_trades > 0 else 0,
             "avg_return": self._calculate_average_return(),
-            "sharpe_ratio": self._calculate_sharpe_ratio()
+            "sharpe_ratio": self._calculate_sharpe_ratio(),
+            "total_profit_loss": total_profit_loss
         }
         
     def _is_winning_trade(self, result: Dict[str, Any]) -> bool:

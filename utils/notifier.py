@@ -3,6 +3,7 @@ from typing import Dict, Any
 from datetime import datetime
 import telegram
 from telegram import Bot
+import os
 
 class Notifier:
     """
@@ -56,13 +57,28 @@ class Notifier:
         
         self._send_notification(message, "alert")
 
+    def send_profit_loss_notification(self, profit_loss: float) -> None:
+        """
+        Send notification about profit and loss.
+        
+        Args:
+            profit_loss: Float representing profit or loss
+        """
+        message = (
+            f"Profit/Loss Update\n"
+            f"Profit/Loss: {profit_loss}\n"
+            f"Timestamp: {datetime.now().isoformat()}"
+        )
+        
+        self._send_notification(message, "profit_loss")
+
     def _send_notification(self, message: str, notification_type: str) -> None:
         """
         Internal method to send notification through configured channels.
         
         Args:
             message: Notification message
-            notification_type: Type of notification (trade/alert)
+            notification_type: Type of notification (trade/alert/profit_loss)
         """
         # Log notification
         self.logger.info(f"Sending {notification_type} notification: {message}")

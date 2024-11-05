@@ -107,6 +107,13 @@ async def process_market_data(
             logger.info(f"News Data: {news_data}")
             await notifier.send_async(f"News update: {news_data}")
 
+        # Calculate profit and loss
+        executed_price = futures_signal.get("price") if futures_signal else options_signal.get("price")
+        current_price = processed_data.get("price")
+        profit_loss = current_price - executed_price
+        logger.info(f"Profit/Loss: {profit_loss}")
+        await notifier.send_async(f"Profit/Loss update: {profit_loss}")
+
     except Exception as e:
         logger.error(f"Error processing market data: {str(e)}")
         await notifier.send_async(f"Error in market data processing: {str(e)}")

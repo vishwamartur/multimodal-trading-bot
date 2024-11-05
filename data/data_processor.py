@@ -12,6 +12,7 @@ class ProcessedData:
     volume: Optional[float] = None
     indicators: Optional[Dict[str, float]] = None
     metadata: Optional[Dict[str, Any]] = None
+    profit_loss: Optional[float] = None  # Added profit_loss field
 
 class DataProcessor:
     """
@@ -59,6 +60,11 @@ class DataProcessor:
                 "source": raw_data.get("source"),
                 "data_quality": self._assess_data_quality(raw_data)
             }
+
+            # Calculate profit and loss
+            executed_price = raw_data.get("executed_price")
+            if executed_price is not None:
+                processed.profit_loss = processed.price - executed_price
 
             return processed
 

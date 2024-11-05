@@ -20,6 +20,7 @@ from data.investment_banking_tracker import InvestmentBankingTracker
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from data.weather_data_fetcher import WeatherDataFetcher
+from data.news_data_fetcher import NewsDataFetcher
 
 # Load environment variables and validate required keys
 load_dotenv()
@@ -30,7 +31,9 @@ required_env_vars = [
     "TELEGRAM_BOT_API_KEY",
     "TELEGRAM_CHAT_ID",
     "WEATHER_API_KEY",
-    "WEATHER_API_ENDPOINT"
+    "WEATHER_API_ENDPOINT",
+    "NEWS_API_KEY",
+    "NEWS_API_ENDPOINT"
 ]
 for var in required_env_vars:
     if not os.getenv(var):
@@ -55,7 +58,8 @@ async def process_market_data(
     order_executor: OrderExecution,
     notifier: Notifier,
     investment_banking_tracker: InvestmentBankingTracker,
-    weather_fetcher: WeatherDataFetcher
+    weather_fetcher: WeatherDataFetcher,
+    news_fetcher: NewsDataFetcher
 ) -> None:
     """
     Process incoming market data asynchronously and execute trading strategies
@@ -70,9 +74,10 @@ async def process_market_data(
         sentiment_task = asyncio.create_task(chatgpt_integration.analyze_sentiment_async(processed_data))
         investment_banking_task = asyncio.create_task(investment_banking_tracker.process_investment_banking_trades(data))
         weather_task = asyncio.create_task(weather_fetcher.fetch_and_process_weather_data("New York"))
+        news_task = asyncio.create_task(news_fetcher.fetch_news_data("market"))
 
-        futures_signal, options_signal, sentiment, _, weather_data = await asyncio.gather(
-            futures_task, options_task, sentiment_task, investment_banking_task, weather_task
+        futures_signal, options_signal, sentiment, _, weather_data, news_data = await asyncio.gather(
+            futures_task, options_task, sentiment_task, investment_banking_task, weather_task, news_task
         )
 
         # Handle futures signals
@@ -96,6 +101,11 @@ async def process_market_data(
         if weather_data:
             logger.info(f"Weather Data: {weather_data}")
             await notifier.send_async(f"Weather update: {weather_data}")
+
+        # Process news data
+        if news_data:
+            logger.info(f"News Data: {news_data}")
+            await notifier.send_async(f"News update: {news_data}")
 
     except Exception as e:
         logger.error(f"Error processing market data: {str(e)}")
@@ -133,6 +143,10 @@ async def main():
             api_key=config["api"]["weather_api_key"],
             api_endpoint=config["api"]["weather_api_endpoint"]
         )
+        news_fetcher = NewsDataFetcher(
+            api_key=config["api"]["news_api_key"],
+            api_endpoint=config["api"]["news_api_endpoint"]
+        )
 
         # Run backtesting with performance metrics
         backtester = Backtester()
@@ -154,7 +168,8 @@ async def main():
                 order_executor,
                 notifier,
                 investment_banking_tracker,
-                weather_fetcher
+                weather_fetcher,
+                news_fetcher
             )
 
         # Start WebSocket connection

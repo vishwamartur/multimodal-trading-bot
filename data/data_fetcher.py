@@ -3,6 +3,7 @@ import logging
 from typing import Dict, Any
 from datetime import datetime
 from data.weather_data_fetcher import WeatherDataFetcher
+from data.news_data_fetcher import NewsDataFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,10 @@ class DataFetcher:
         self.weather_fetcher = WeatherDataFetcher(
             api_key=config["api"]["weather_api_key"],
             api_endpoint=config["api"]["weather_api_endpoint"]
+        )
+        self.news_fetcher = NewsDataFetcher(
+            api_key=config["api"]["news_api_key"],
+            api_endpoint=config["api"]["news_api_endpoint"]
         )
 
     async def process_data_async(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -185,4 +190,27 @@ class DataFetcher:
             return processed_weather_data
         except Exception as e:
             self.logger.error(f"Error fetching or processing weather data: {str(e)}")
+            return {}
+
+    async def fetch_and_process_news_data(self, topic: str) -> Dict[str, Any]:
+        """
+        Fetch and process news data for a given topic.
+        
+        Args:
+            topic: Topic for which to fetch news data
+            
+        Returns:
+            Dictionary containing processed news data
+        """
+        try:
+            self.logger.info(f"Fetching news data for topic: {topic}")
+            news_data = self.news_fetcher.fetch_news_data(topic)
+            processed_news_data = {
+                "topic": topic,
+                "articles": news_data.get("articles", [])
+            }
+            self.logger.info(f"News data processing complete for topic: {topic}")
+            return processed_news_data
+        except Exception as e:
+            self.logger.error(f"Error fetching or processing news data: {str(e)}")
             return {}

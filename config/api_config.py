@@ -26,6 +26,10 @@ class APIConfig:
         self.weather_api_key = os.getenv("WEATHER_API_KEY")
         self.weather_api_endpoint = os.getenv("WEATHER_API_ENDPOINT")
 
+        # News API configurations
+        self.news_api_key = os.getenv("NEWS_API_KEY")
+        self.news_api_endpoint = os.getenv("NEWS_API_ENDPOINT")
+
         # Additional API configurations can be added here
         # Example for other market data or sentiment analysis APIs:
         # self.other_api_key = os.getenv("OTHER_API_KEY")
@@ -58,6 +62,15 @@ class APIConfig:
             "Content-Type": "application/json",
         }
 
+    def news_headers(self):
+        """
+        Returns headers required for making requests to the News API.
+        """
+        return {
+            "Authorization": f"Bearer {self.news_api_key}",
+            "Content-Type": "application/json",
+        }
+
     def get_dhan_endpoint(self, path):
         """
         Constructs and returns a full Dhan API endpoint for a given path.
@@ -75,3 +88,9 @@ class APIConfig:
         Returns the Weather API endpoint.
         """
         return self.weather_api_endpoint
+
+    def get_news_endpoint(self):
+        """
+        Returns the News API endpoint.
+        """
+        return self.news_api_endpoint

@@ -54,6 +54,16 @@ jobs:
           DHAN_API_KEY: ${{ secrets.DHAN_API_KEY }}
           DHAN_SECRET_KEY: ${{ secrets.DHAN_SECRET_KEY }}
           CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+          TELEGRAM_BOT_API_KEY: ${{ secrets.TELEGRAM_BOT_API_KEY }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          WEATHER_API_ENDPOINT: ${{ secrets.WEATHER_API_ENDPOINT }}
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+          NEWS_API_ENDPOINT: ${{ secrets.NEWS_API_ENDPOINT }}
         run: |
           # Deploy command or script here
-          echo "Deployment step - Placeholder. Add actual deployment commands here."
+          echo "Starting deployment..."
+          # Example deployment commands
+          # python deploy.py --env production
+          # ./scripts/deploy.sh
+          echo "Deployment completed."

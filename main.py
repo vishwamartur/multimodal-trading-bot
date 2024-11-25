@@ -21,6 +21,7 @@ import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from data.weather_data_fetcher import WeatherDataFetcher
 from data.news_data_fetcher import NewsDataFetcher
+from data.mutual_funds_tracker import MutualFundsTracker
 
 # Load environment variables and validate required keys
 load_dotenv()
@@ -59,7 +60,8 @@ async def process_market_data(
     notifier: Notifier,
     investment_banking_tracker: InvestmentBankingTracker,
     weather_fetcher: WeatherDataFetcher,
-    news_fetcher: NewsDataFetcher
+    news_fetcher: NewsDataFetcher,
+    mutual_funds_tracker: MutualFundsTracker
 ) -> None:
     """
     Process incoming market data asynchronously and execute trading strategies
@@ -75,9 +77,10 @@ async def process_market_data(
         investment_banking_task = asyncio.create_task(investment_banking_tracker.process_investment_banking_trades(data))
         weather_task = asyncio.create_task(weather_fetcher.fetch_and_process_weather_data("New York"))
         news_task = asyncio.create_task(news_fetcher.fetch_news_data("market"))
+        mutual_funds_task = asyncio.create_task(mutual_funds_tracker.process_mutual_funds_trades(data))
 
-        futures_signal, options_signal, sentiment, _, weather_data, news_data = await asyncio.gather(
-            futures_task, options_task, sentiment_task, investment_banking_task, weather_task, news_task
+        futures_signal, options_signal, sentiment, _, weather_data, news_data, _ = await asyncio.gather(
+            futures_task, options_task, sentiment_task, investment_banking_task, weather_task, news_task, mutual_funds_task
         )
 
         # Handle futures signals
@@ -154,6 +157,7 @@ async def main():
             api_key=config["api"]["news_api_key"],
             api_endpoint=config["api"]["news_api_endpoint"]
         )
+        mutual_funds_tracker = MutualFundsTracker(config["investment_banking"])
 
         # Run backtesting with performance metrics
         backtester = Backtester()
@@ -176,7 +180,8 @@ async def main():
                 notifier,
                 investment_banking_tracker,
                 weather_fetcher,
-                news_fetcher
+                news_fetcher,
+                mutual_funds_tracker
             )
 
         # Start WebSocket connection

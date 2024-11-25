@@ -43,6 +43,8 @@ def load_config():
         "investment_banking": {
             "tracking_enabled": os.getenv("INVESTMENT_BANKING_TRACKING_ENABLED", "false") == "true",
             "data_source": os.getenv("INVESTMENT_BANKING_DATA_SOURCE", "default_source"),
+            "mutual_funds_tracking_enabled": os.getenv("MUTUAL_FUNDS_TRACKING_ENABLED", "false") == "true",
+            "mutual_funds_data_source": os.getenv("MUTUAL_FUNDS_DATA_SOURCE", "default_source"),
         },
         "logging": {
             "log_level": os.getenv("LOG_LEVEL", "INFO"),

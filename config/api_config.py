@@ -30,6 +30,10 @@ class APIConfig:
         self.news_api_key = os.getenv("NEWS_API_KEY")
         self.news_api_endpoint = os.getenv("NEWS_API_ENDPOINT")
 
+        # Mutual Funds API configurations
+        self.mutual_funds_api_key = os.getenv("MUTUAL_FUNDS_API_KEY")
+        self.mutual_funds_api_endpoint = os.getenv("MUTUAL_FUNDS_API_ENDPOINT")
+
         # Additional API configurations can be added here
         # Example for other market data or sentiment analysis APIs:
         # self.other_api_key = os.getenv("OTHER_API_KEY")
@@ -71,6 +75,15 @@ class APIConfig:
             "Content-Type": "application/json",
         }
 
+    def mutual_funds_headers(self):
+        """
+        Returns headers required for making requests to the Mutual Funds API.
+        """
+        return {
+            "Authorization": f"Bearer {self.mutual_funds_api_key}",
+            "Content-Type": "application/json",
+        }
+
     def get_dhan_endpoint(self, path):
         """
         Constructs and returns a full Dhan API endpoint for a given path.
@@ -94,3 +107,9 @@ class APIConfig:
         Returns the News API endpoint.
         """
         return self.news_api_endpoint
+
+    def get_mutual_funds_endpoint(self):
+        """
+        Returns the Mutual Funds API endpoint.
+        """
+        return self.mutual_funds_api_endpoint

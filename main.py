@@ -22,6 +22,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from data.weather_data_fetcher import WeatherDataFetcher
 from data.news_data_fetcher import NewsDataFetcher
 from data.mutual_funds_tracker import MutualFundsTracker
+from denodo_integration import DenodoIntegration
 
 # Load environment variables and validate required keys
 load_dotenv()
@@ -34,7 +35,13 @@ required_env_vars = [
     "WEATHER_API_KEY",
     "WEATHER_API_ENDPOINT",
     "NEWS_API_KEY",
-    "NEWS_API_ENDPOINT"
+    "NEWS_API_ENDPOINT",
+    "DENODO_HOST",
+    "DENODO_PORT",
+    "DENODO_DATABASE",
+    "DENODO_USERNAME",
+    "DENODO_PASSWORD",
+    "DENODO_JDBC_DRIVER"
 ]
 for var in required_env_vars:
     if not os.getenv(var):
@@ -61,7 +68,8 @@ async def process_market_data(
     investment_banking_tracker: InvestmentBankingTracker,
     weather_fetcher: WeatherDataFetcher,
     news_fetcher: NewsDataFetcher,
-    mutual_funds_tracker: MutualFundsTracker
+    mutual_funds_tracker: MutualFundsTracker,
+    denodo_integration: DenodoIntegration
 ) -> None:
     """
     Process incoming market data asynchronously and execute trading strategies
@@ -78,9 +86,10 @@ async def process_market_data(
         weather_task = asyncio.create_task(weather_fetcher.fetch_and_process_weather_data("New York"))
         news_task = asyncio.create_task(news_fetcher.fetch_news_data("market"))
         mutual_funds_task = asyncio.create_task(mutual_funds_tracker.process_mutual_funds_trades(data))
+        denodo_query_task = asyncio.create_task(denodo_integration.execute_query("SELECT * FROM your_table"))
 
-        futures_signal, options_signal, sentiment, _, weather_data, news_data, _ = await asyncio.gather(
-            futures_task, options_task, sentiment_task, investment_banking_task, weather_task, news_task, mutual_funds_task
+        futures_signal, options_signal, sentiment, _, weather_data, news_data, _, denodo_data = await asyncio.gather(
+            futures_task, options_task, sentiment_task, investment_banking_task, weather_task, news_task, mutual_funds_task, denodo_query_task
         )
 
         # Handle futures signals
@@ -109,6 +118,11 @@ async def process_market_data(
         if news_data:
             logger.info(f"News Data: {news_data}")
             await notifier.send_async(f"News update: {news_data}")
+
+        # Process Denodo data
+        if denodo_data:
+            logger.info(f"Denodo Data: {denodo_data}")
+            await notifier.send_async(f"Denodo data update: {denodo_data}")
 
         # Calculate profit and loss
         executed_price = futures_signal.get("price") if futures_signal else options_signal.get("price")
@@ -158,6 +172,7 @@ async def main():
             api_endpoint=config["api"]["news_api_endpoint"]
         )
         mutual_funds_tracker = MutualFundsTracker(config["investment_banking"])
+        denodo_integration = DenodoIntegration()
 
         # Run backtesting with performance metrics
         backtester = Backtester()
@@ -181,7 +196,8 @@ async def main():
                 investment_banking_tracker,
                 weather_fetcher,
                 news_fetcher,
-                mutual_funds_tracker
+                mutual_funds_tracker,
+                denodo_integration
             )
 
         # Start WebSocket connection

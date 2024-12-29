@@ -21,6 +21,12 @@ def load_config():
             "chatgpt_api_key": os.getenv("CHATGPT_API_KEY"),
             "weather_api_key": os.getenv("WEATHER_API_KEY"),
             "weather_api_endpoint": os.getenv("WEATHER_API_ENDPOINT"),
+            "denodo_host": os.getenv("DENODO_HOST"),
+            "denodo_port": os.getenv("DENODO_PORT"),
+            "denodo_database": os.getenv("DENODO_DATABASE"),
+            "denodo_username": os.getenv("DENODO_USERNAME"),
+            "denodo_password": os.getenv("DENODO_PASSWORD"),
+            "denodo_jdbc_driver": os.getenv("DENODO_JDBC_DRIVER"),
         },
         "strategy": {
             "futures": {

@@ -34,6 +34,14 @@ class APIConfig:
         self.mutual_funds_api_key = os.getenv("MUTUAL_FUNDS_API_KEY")
         self.mutual_funds_api_endpoint = os.getenv("MUTUAL_FUNDS_API_ENDPOINT")
 
+        # Denodo API configurations
+        self.denodo_host = os.getenv("DENODO_HOST")
+        self.denodo_port = os.getenv("DENODO_PORT")
+        self.denodo_database = os.getenv("DENODO_DATABASE")
+        self.denodo_username = os.getenv("DENODO_USERNAME")
+        self.denodo_password = os.getenv("DENODO_PASSWORD")
+        self.denodo_jdbc_driver = os.getenv("DENODO_JDBC_DRIVER")
+
         # Additional API configurations can be added here
         # Example for other market data or sentiment analysis APIs:
         # self.other_api_key = os.getenv("OTHER_API_KEY")
@@ -84,6 +92,15 @@ class APIConfig:
             "Content-Type": "application/json",
         }
 
+    def denodo_headers(self):
+        """
+        Returns headers required for making requests to the Denodo API.
+        """
+        return {
+            "Authorization": f"Bearer {self.denodo_username}:{self.denodo_password}",
+            "Content-Type": "application/json",
+        }
+
     def get_dhan_endpoint(self, path):
         """
         Constructs and returns a full Dhan API endpoint for a given path.
@@ -113,3 +130,9 @@ class APIConfig:
         Returns the Mutual Funds API endpoint.
         """
         return self.mutual_funds_api_endpoint
+
+    def get_denodo_endpoint(self):
+        """
+        Returns the Denodo API endpoint.
+        """
+        return f"jdbc:denodo://{self.denodo_host}:{self.denodo_port}/{self.denodo_database}"

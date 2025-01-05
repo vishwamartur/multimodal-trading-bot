@@ -3,6 +3,7 @@ from typing import Dict, Any
 from datetime import datetime
 from .base_strategy import BaseStrategy, StrategyResult
 from data.weather_data_fetcher import WeatherDataFetcher
+from data.news_data_fetcher import NewsDataFetcher
 
 class OptionsStrategy(BaseStrategy):
     """
@@ -23,6 +24,10 @@ class OptionsStrategy(BaseStrategy):
         self.weather_fetcher = WeatherDataFetcher(
             api_key=config["api"]["weather_api_key"],
             api_endpoint=config["api"]["weather_api_endpoint"]
+        )
+        self.news_fetcher = NewsDataFetcher(
+            api_key=config["api"]["news_api_key"],
+            api_endpoint=config["api"]["news_api_endpoint"]
         )
 
     async def generate_signal(self, market_data: Dict[str, Any]) -> StrategyResult:
@@ -55,11 +60,16 @@ class OptionsStrategy(BaseStrategy):
         weather_data = await self.weather_fetcher.fetch_weather_data("New York")  # Example location
         weather_score = self._analyze_weather_data(weather_data)
         
+        # Fetch and process news data
+        news_data = await self.news_fetcher.fetch_news_data("market")
+        news_score = self._analyze_news_data(news_data)
+        
         # Calculate final signal
         signals = {
             "options": options_score,
             "technical": technical_score,
-            "weather": weather_score
+            "weather": weather_score,
+            "news": news_score
         }
         
         signal = sum(signals.values()) / len(signals)
@@ -168,5 +178,27 @@ class OptionsStrategy(BaseStrategy):
             score -= 0.2
         if weather_description and "rain" in weather_description.lower():
             score -= 0.3  # Example condition for rainy weather
+        
+        return max(min(score, 1.0), -1.0)  # Clamp between -1 and 1
+
+    def _analyze_news_data(self, news_data: Dict[str, Any]) -> float:
+        """
+        Analyze news data for trading signals.
+        
+        Args:
+            news_data: Dictionary containing news data
+            
+        Returns:
+            News analysis score between -1 and 1
+        """
+        score = 0.0
+        articles = news_data.get("articles", [])
+        
+        for article in articles:
+            sentiment = article.get("sentiment", 0)
+            score += sentiment
+        
+        if articles:
+            score /= len(articles)  # Average sentiment score
         
         return max(min(score, 1.0), -1.0)  # Clamp between -1 and 1

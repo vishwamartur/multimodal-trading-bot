@@ -5,10 +5,11 @@ from strategies.base_strategy import BaseStrategy, StrategyResult
 from models.sentiment_analysis import SentimentAnalyzer
 from models.chatgpt_integration import ChatGPTIntegration
 from data.weather_data_fetcher import WeatherDataFetcher
+from data.news_data_fetcher import NewsDataFetcher
 
 class FuturesStrategy(BaseStrategy):
     """
-    Strategy for trading futures contracts using sentiment analysis, technical indicators, and weather data.
+    Strategy for trading futures contracts using sentiment analysis, technical indicators, weather data, and news data.
     """
     
     def __init__(self, config: Dict[str, Any]):
@@ -25,10 +26,14 @@ class FuturesStrategy(BaseStrategy):
             api_key=config["api"]["weather_api_key"],
             api_endpoint=config["api"]["weather_api_endpoint"]
         )
+        self.news_fetcher = NewsDataFetcher(
+            api_key=config["api"]["news_api_key"],
+            api_endpoint=config["api"]["news_api_endpoint"]
+        )
         
     async def generate_signal(self, market_data: Dict[str, Any]) -> StrategyResult:
         """
-        Generate trading signal for futures based on market data, sentiment, and weather data.
+        Generate trading signal for futures based on market data, sentiment, weather data, and news data.
         
         Args:
             market_data: Dictionary containing processed market data
@@ -53,12 +58,17 @@ class FuturesStrategy(BaseStrategy):
         weather_data = await self.weather_fetcher.fetch_weather_data("New York")  # Example location
         weather_score = self._analyze_weather_data(weather_data)
         
+        # Fetch and process news data
+        news_data = await self.news_fetcher.fetch_news_data("market")
+        news_score = self._analyze_news_data(news_data)
+        
         # Combine signals
         signals = {
             "sentiment": sentiment.score,
             "chatgpt": chatgpt_score,
             "technical": self._analyze_technical_indicators(market_data),
-            "weather": weather_score
+            "weather": weather_score,
+            "news": news_score
         }
         
         # Calculate final signal and confidence
@@ -129,5 +139,27 @@ class FuturesStrategy(BaseStrategy):
             score -= 0.2
         if weather_description and "rain" in weather_description.lower():
             score -= 0.3  # Example condition for rainy weather
+        
+        return max(min(score, 1.0), -1.0)  # Clamp between -1 and 1
+
+    def _analyze_news_data(self, news_data: Dict[str, Any]) -> float:
+        """
+        Analyze news data for trading signals.
+        
+        Args:
+            news_data: Dictionary containing news data
+            
+        Returns:
+            News analysis score between -1 and 1
+        """
+        score = 0.0
+        articles = news_data.get("articles", [])
+        
+        for article in articles:
+            sentiment = article.get("sentiment", 0)
+            score += sentiment
+        
+        if articles:
+            score /= len(articles)  # Average sentiment score
         
         return max(min(score, 1.0), -1.0)  # Clamp between -1 and 1
